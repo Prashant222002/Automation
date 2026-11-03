@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06060c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>NeuroTriage Editor</title>
+<style>
+:root{--bg:#06060c;--ink:#eef0ff;--mut:#8e92b5;--acc:#8b5cf6;--acc2:#22d3ee;--ok:#34d399;--bad:#fb7185;--warn:#fbbf24;--line:rgba(255,255,255,.09);--glass:rgba(255,255,255,.045);--r:18px;--shadow:0 24px 60px -24px rgba(0,0,0,.7)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14.5px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1000px 560px at 6% -10%,rgba(139,92,246,.2),transparent 60%),radial-gradient(900px 520px at 104% 4%,rgba(34,211,238,.11),transparent 60%),var(--bg);background-attachment:fixed;min-height:100vh}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+button,select,input,textarea{font:inherit}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;background:rgba(8,8,16,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:-.2px;font-size:16px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 0 12px var(--acc2)}
+.brand small{color:var(--mut);font-weight:500;font-size:12.5px}
+.top a{color:var(--acc2);text-decoration:none;font-weight:600;font-size:13px}
+.top a:hover{text-decoration:underline}
+.wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:14px;padding:14px;max-width:1400px;margin:0 auto}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);min-width:0}
+.panel.full{grid-column:1 / -1}
+h2{display:flex;align-items:center;font-size:11.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--mut);margin:0 0 10px;font-weight:650}
+h2::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc2);margin-right:8px;box-shadow:0 0 10px var(--acc2)}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.toolbar .sp{flex:1}
+select,input,textarea{background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:8px 11px;outline:none;transition:border-color .2s,box-shadow .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(139,92,246,.18)}
+.btn{border:0;border-radius:11px;padding:9px 14px;color:#fff;font-weight:650;font-size:13px;cursor:pointer;background:linear-gradient(135deg,var(--acc),#6366f1 55%,#3b82f6);box-shadow:0 8px 22px -10px rgba(139,92,246,.8);transition:transform .15s,filter .2s,opacity .2s;white-space:nowrap}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;filter:none}
+.btn.sec{background:rgba(255,255,255,.06);border:1px solid var(--line);box-shadow:none}
+.btn.go{background:linear-gradient(135deg,#10b981,#22d3ee);color:#03131a;box-shadow:0 8px 22px -10px rgba(34,211,238,.7)}
+.btn.block{width:100%;padding:13px;font-size:14.5px;border-radius:14px}
+.seg{display:inline-flex;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;color:var(--mut);padding:7px 12px;border-radius:9px;font-weight:600;font-size:12.5px;cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,var(--acc),#3b82f6);color:#fff}
+.codewrap{position:relative;display:flex;height:min(62vh,640px);border:1px solid var(--line);border-radius:14px;background:#050509;overflow:hidden}
+.gutter{flex:0 0 52px;margin:0;padding:12px 10px 12px 0;text-align:right;color:#4b4f75;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:hidden;user-select:none;border-right:1px solid var(--line);background:rgba(255,255,255,.015)}
+#code{flex:1;margin:0;border:0;border-radius:0;background:transparent;padding:12px 14px;resize:none;color:#dfe3ff;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;tab-size:2;box-shadow:none}
+#code:focus{box-shadow:none}
+.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin-top:8px;gap:10px;flex-wrap:wrap}
+.stage{display:flex;justify-content:center;align-items:center;background:radial-gradient(circle at 50% 40%,#16162a,#07070e);border:1px solid var(--line);border-radius:14px;height:min(62vh,640px);overflow:hidden}
+.stage iframe{border:0;border-radius:10px;background:#000;box-shadow:0 20px 50px -20px rgba(0,0,0,.9);transform-origin:center}
+.scrub{display:flex;align-items:center;gap:10px;margin-top:10px}
+.scrub input[type=range]{flex:1;accent-color:var(--acc2);padding:0;border:0;background:transparent;box-shadow:none}
+.tc{font:12.5px ui-monospace,Menlo,monospace;color:var(--mut);white-space:nowrap;min-width:118px;text-align:right}
+.checks{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.checks li{display:flex;gap:9px;align-items:flex-start;font-size:13px;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:11px;padding:8px 10px}
+.checks li b{flex:0 0 auto;width:18px;text-align:center}
+.checks .ok b{color:var(--ok)}.checks .bad b{color:var(--bad)}.checks .warn b{color:var(--warn)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 5px;font-weight:550}
+.field{margin-bottom:10px}
+textarea.script{min-height:120px;resize:vertical;width:100%}
+.prog{height:10px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:12px}
+.prog>div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200% 100%;transition:width .5s ease;animation:shimmer 2.4s linear infinite}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.msg{font-size:13px;color:var(--mut);margin-top:8px;min-height:18px}
+.msg.err{color:var(--bad)}
+.result video{width:100%;border-radius:14px;background:#000;margin-top:10px;max-height:56vh}
+.result .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(34,211,238,.12);color:var(--acc2);border:1px solid rgba(34,211,238,.25)}
+.hint{font-size:12px;color:var(--mut)}
+@media (max-width:980px){
+  .wrap{grid-template-columns:1fr}
+  .codewrap,.stage{height:52vh}
+}
+@media (max-width:560px){
+  .top{padding:10px 12px}
+  .wrap{padding:10px;gap:10px}
+  .grid2{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="dot"></span>NeuroTriage Editor <small>HyperFrames code · live preview</small></div>
+  <div class="toolbar" style="margin:0">
+    <a href="/">← Dashboard</a>
+    <button class="btn sec" id="pinBtn" type="button">PIN</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- CODE -->
+  <section class="panel">
+    <h2>Composition code</h2>
+    <div class="toolbar">
+      <select id="tpl" aria-label="Template">
+        <option value="">Template chuno…</option>
+        <option value="reel">Reel: hook + 2 scenes</option>
+        <option value="cube3d">3D: rotating object (CSS 3D)</option>
+        <option value="counter">Data: counter / stats</option>
+      </select>
+      <span class="sp"></span>
+      <button class="btn sec" id="btnCheck" type="button">✔ Check</button>
+      <button class="btn sec" id="btnReset" type="button">Reset</button>
+    </div>
+    <div class="codewrap">
+      <pre class="gutter" id="gutter" aria-hidden="true"></pre>
+      <textarea id="code" spellcheck="false" wrap="off" aria-label="HTML code"></textarea>
+    </div>
+    <div class="meta">
+      <span id="stats">—</span>
+      <span class="hint">Ctrl/⌘+S = draft save · Tab = 2 spaces</span>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="panel">
+    <h2>Live preview</h2>
+    <div class="toolbar">
+      <div class="seg" id="fmt" role="group" aria-label="Format">
+        <button type="button" data-v="reel" class="on">9:16 Reel</button>
+        <button type="button" data-v="long">16:9 Long</button>
+      </div>
+      <span class="sp"></span>
+      <button class="btn sm sec" id="btnPlay" type="button">▶ Play</button>
+    </div>
+    <div class="stage" id="stage"><iframe id="pv" title="Preview" sandbox="allow-scripts"></iframe></div>
+    <div class="scrub">
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Timeline">
+      <span class="tc" id="tc">0.00 / 0.00 s</span>
+    </div>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <!-- RENDER -->
+  <section class="panel full">
+    <h2>Render (HyperFrames → final MP4)</h2>
+    <div class="grid2">
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" maxlength="120" placeholder="Video ka naam">
+      </div>
+      <div class="field">
+        <label for="lang">Voice language</label>
+        <select id="lang"><option value="hi">Hindi (hi)</option><option value="en">English (en)</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="script">Voiceover script (ek line = ek scene)</label>
+      <textarea id="script" class="script" maxlength="200000" placeholder="Pehli line hook hai&#10;Doosri line main point hai&#10;Teesri line call to action hai"></textarea>
+      <div class="hint" style="margin-top:4px">Script ke bina render nahi hota. Voice ke liye “Voice: AI” chuno, warna sirf visuals render honge.</div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="voice">Voice</label>
+        <select id="voice"><option value="generate">AI voice (script se)</option><option value="none">Koi voice nahi</option></select>
+      </div>
+      <div class="field">
+        <label for="fmt2">Output format</label>
+        <select id="fmt2"><option value="reel">9:16 Reel</option><option value="long">16:9 Long (1–2 hr, chunked)</option></select>
+      </div>
+    </div>
+    <button class="btn go block" id="btnRender" type="button">🚀 Render video</button>
+    <div class="prog" aria-hidden="true"><div id="prog"></div></div>
+    <div class="msg" id="rmsg" role="status" aria-live="polite"></div>
+    <div class="result" id="result"></div>
+  </section>
+
+</main>
+
+<script>
+/* ---------- state & helpers ---------- */
+const $ = (s) => document.querySelector(s);
+let PIN = localStorage.getItem("focus_pin") || "";
+const DRAFT_KEY = "focus_editor_draft";
+const jobs = () => JSON.parse(localStorage.getItem("focus_jobs") || "[]");
+const saveJob = (j) => { const l = jobs().filter((x) => x.id !== j.id); l.unshift(j); localStorage.setItem("focus_jobs", JSON.stringify(l.slice(0, 30))); };
+
+async function api(path, body) {
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers: { "x-pin": PIN, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let j = {}; try { j = await r.json(); } catch {}
+  if (!r.ok) throw new Error(j.error || ("Server error " + r.status));
+  return j;
+}
+
+/* ---------- templates (all use the same HyperFrames contract as the dashboard) ---------- */
+const TEMPLATES = {
+  reel: `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"><\/script>
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#0b0b12;font-family:Inter,system-ui,sans-serif;color:#fff}
+.layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;opacity:0}
+h1{font-size:118px;line-height:1.04;letter-spacing:-3px;margin:0 70px;font-weight:800}
+.glow{position:absolute;width:900px;height:900px;border-radius:50%;background:radial-gradient(circle,#7c5cff55,transparent 70%);left:90px;top:510px}
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="{{TOTAL}}" data-width="1080" data-height="1920">
+  <div class="glow"></div>
+  <div class="layer" id="s1"><h1>Hook line yahan</h1></div>
+  <div class="layer" id="s2"><h1>Main point yahan</h1></div>
+</div>
+<script>
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#s1", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, {{S1_START}});
+tl.to("#s1", { opacity: 0, duration: 0.4 }, {{S1_START}} + {{S1_DUR}} - 0.4);
+tl.fromTo("#s2", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, {{S2_START}});
+window.__timelines["main"] = tl;
+<\/script></body></html>`,
+
+  cube3d: `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"><\/script>
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:radial-gradient(circle at 50% 35%,#1b1640,#07070e 70%);font-family:Inter,system-ui,sans-serif;color:#fff}
+.stage{position:absolute;left:0;right:0;top:560px;height:800px;perspective:1400px;display:flex;justify-content:center;align-items:center}
+.cube{position:relative;width:420px;height:420px;transform-style:preserve-3d}
+.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:800;border-radius:28px;border:2px solid #ffffff33;background:linear-gradient(135deg,#8b5cf6cc,#22d3eecc);backface-visibility:visible}
+.f1{transform:translateZ(210px)} .f2{transform:rotateY(90deg) translateZ(210px)} .f3{transform:rotateY(180deg) translateZ(210px)} .f4{transform:rotateY(-90deg) translateZ(210px)}
+.title{position:absolute;left:60px;right:60px;top:200px;text-align:center;font-size:92px;font-weight:800;letter-spacing:-2px;opacity:0}
+.sub{position:absolute;left:60px;right:60px;top:1420px;text-align:center;font-size:44px;opacity:0;color:#c4b5fd}
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="{{TOTAL}}" data-width="1080" data-height="1920">
+  <div class="title" id="t">Apna title</div>
+  <div class="stage"><div class="cube" id="cube">
+    <div class="face f1">Heart</div><div class="face f2">Brain</div><div class="face f3">Lungs</div><div class="face f4">Liver</div>
+  </div></div>
+  <div class="sub" id="sub">Subtitle / fact yahan</div>
+</div>
+<script>
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#t", { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, {{S1_START}});
+tl.fromTo("#cube", { rotationX: -20, rotationY: 0, scale: 0.7 }, { rotationX: -20, rotationY: 720, scale: 1, duration: {{TOTAL}} - 1.5, ease: "none" }, 0);
+tl.fromTo("#sub", { opacity: 0 }, { opacity: 1, duration: 0.6 }, {{S2_START}});
+window.__timelines["main"] = tl;
+<\/script></body></html>`,
+
+  counter: `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"><\/script>
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#0a0f1a;font-family:Inter,system-ui,sans-serif;color:#fff}
+.wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.num{font-size:330px;font-weight:900;letter-spacing:-10px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lbl{font-size:70px;font-weight:700;margin-top:10px;opacity:0}
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="{{TOTAL}}" data-width="1080" data-height="1920">
+  <div class="wrap"><div class="num" id="num">0</div><div class="lbl" id="lbl">Stat ka label</div></div>
+</div>
+<script>
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const o = { v: 0 };
+tl.to(o, { v: 1250, duration: 3, ease: "power2.out", onUpdate: () => { document.getElementById("num").textContent = Math.round(o.v).toLocaleString("en-IN"); } }, {{S1_START}});
+tl.to("#lbl", { opacity: 1, duration: 0.6 }, {{S1_START}} + 3);
+window.__timelines["main"] = tl;
+<\/script></body></html>`,
+};
+
+const SCENE_TOKENS = { TOTAL: 12, VOICE_DUR: 11, ENDCARD_START: 11, S1_START: 0, S1_DUR: 4, S2_START: 4, S2_DUR: 4, S3_START: 8, S3_DUR: 4 };
+const KNOWN_TOKENS = new Set(["TOTAL","W","H","VOICE_DUR","ENDCARD_START","S1_START","S1_DUR","S2_START","S2_DUR","S3_START","S3_DUR","S4_START","S4_DUR","S5_START","S5_DUR"]);
+
+/* ---------- preview bridge: runs inside the iframe, talks by postMessage only (no same-origin access) ---------- */
+const BRIDGE = `<script>
+(function(){
+  function tl(){ return window.__timelines && window.__timelines.main; }
+  window.addEventListener("message", function(e){
+    var d = e.data || {}, t = tl(); if (!t) return;
+    if (d.t === "seek") { t.pause(); t.seek(Math.max(0, d.v), false); }
+    if (d.t === "play") { t.restart(); }
+    if (d.t === "pause") { t.pause(); }
+  });
+  setInterval(function(){
+    var t = tl();
+    parent.postMessage({ t: "tick", time: t ? t.time() : 0, dur: t ? t.duration() : 0, ok: !!t, playing: !!(t && t.isActive()) }, "*");
+  }, 80);
+})();
+<\/script>`;
+
+/* ---------- preview build: fill tokens with sample values, strip caption markers, inject bridge ---------- */
+function buildPreview(src, fmt) {
+  const W = fmt === "long" ? 1920 : 1080, H = fmt === "long" ? 1080 : 1920;
+  const vals = { ...SCENE_TOKENS, W, H };
+  let html = src.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vals ? String(vals[k]) : m))
+                .replace(/<!--FOCUS_CAPTIONS-->/g, "").replace(/\/\*FOCUS_CAPTIONS_JS\*\//g, "");
+  html = html.includes("</body>") ? html.replace("</body>", BRIDGE + "</body>") : html + BRIDGE;
+  return html;
+}
+
+/* ---------- checks (mirror of server validHtml + extra editor hints) ---------- */
+function runChecks(src, fmt) {
+  const out = [];
+  const add = (type, text) => out.push({ type, text });
+  if (!src.trim()) { add("bad", "Code khali hai. Template chuno ya code likho."); return out; }
+  if (!/data-composition-id\s*=\s*["']main["']/.test(src)) add("bad", 'Root element me data-composition-id="main" chahiye.');
+  else add("ok", "Root composition id mila.");
+  if (!/__timelines/.test(src)) add("bad", 'window.__timelines["main"] = tl; register karna zaroori hai.');
+  else add("ok", "Timeline register hui.");
+  if (/repeat\s*:\s*-1/.test(src)) add("bad", "repeat: -1 allowed nahi (render deterministic hona chahiye).");
+  if (/Date\.now\(|Math\.random\(/.test(src)) add("bad", "Date.now / Math.random allowed nahi (har render same hona chahiye).");
+  if (!/gsap/.test(src) && !/<script/.test(src)) add("warn", "Koi animation script nahi. Sirf static HTML render hoga.");
+  const unknown = [...new Set([...src.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).filter((k) => !KNOWN_TOKENS.has(k)))];
+  if (unknown.length) add("bad", "Unknown token: " + unknown.map((u) => "{{" + u + "}}").join(", "));
+  else add("ok", "Tokens theek hain.");
+  if (!/\{\{TOTAL\}\}/.test(src)) add("warn", "{{TOTAL}} token nahi mila. Duration fix ho jayegi.");
+  const opens = (src.match(/<div\b/g) || []).length, closes = (src.match(/<\/div>/g) || []).length;
+  if (opens !== closes) add("warn", `<div> open ${opens} / close ${closes}. Tag check karo.`);
+  else add("ok", "div tags balanced.");
+  if (/assets\//.test(src)) add("warn", "assets/ files preview me nahi dikhengi; render ke waqt upload hone chahiye.");
+  const tl0 = (src.match(/\btl\.(?:to|fromTo|from|set)\s*\(/g) || []).length;
+  add(tl0 ? "ok" : "warn", tl0 ? `${tl0} timeline tween(s) mile.` : "Koi tl.to / tl.fromTo nahi mila.");
+  add("ok", `Format ${fmt === "long" ? "16:9 (1920×1080)" : "9:16 (1080×1920)"}, sample duration ${SCENE_TOKENS.TOTAL}s.`);
+  return out;
+}
+
+function showChecks(list) {
+  $("#checks").innerHTML = list.map((c) => `<li class="${c.type}"><b>${c.type === "ok" ? "✓" : c.type === "warn" ? "!" : "✕"}</b><span>${escapeHtml(c.text)}</span></li>`).join("");
+}
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- editor: line numbers, tab, save ---------- */
+const code = $("#code"), gutter = $("#gutter");
+function paintGutter() {
+  const n = code.value.split("\n").length;
+  let s = ""; for (let i = 1; i <= n; i++) s += i + "\n";
+  gutter.textContent = s;
+  gutter.scrollTop = code.scrollTop;
+  const bytes = new Blob([code.value]).size;
+  $("#stats").textContent = `${n} lines · ${(bytes / 1024).toFixed(1)} KB`;
+}
+code.addEventListener("scroll", () => (gutter.scrollTop = code.scrollTop));
+code.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const s = code.selectionStart, en = code.selectionEnd;
+    code.value = code.value.slice(0, s) + "  " + code.value.slice(en);
+    code.selectionStart = code.selectionEnd = s + 2; onEdit();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveDraft(); flash("Draft save ho gaya ✓"); }
+});
+let t1 = null, saveT = null;
+function onEdit() {
+  paintGutter(); clearTimeout(t1);
+  t1 = setTimeout(refreshPreview, 500);
+  clearTimeout(saveT); saveT = setTimeout(saveDraft, 1200);
+}
+code.addEventListener("input", onEdit);
+function saveDraft() { localStorage.setItem(DRAFT_KEY, code.value); }
+function flash(text) { const m = $("#rmsg"); m.className = "msg"; m.textContent = text; setTimeout(() => { if (m.textContent === text) m.textContent = ""; }, 1800); }
+
+/* ---------- preview ---------- */
+let FMT = "reel";
+const pv = $("#pv"), stage = $("#stage");
+let PV_DUR = 0, PV_TIME = 0, PV_READY = false;
+function refreshPreview() {
+  const src = code.value;
+  showChecks(runChecks(src, FMT));
+  const W = FMT === "long" ? 1920 : 1080, H = FMT === "long" ? 1080 : 1920;
+  const boxW = stage.clientWidth - 24, boxH = stage.clientHeight - 24;
+  const scale = Math.min(boxW / W, boxH / H, 1);
+  pv.style.width = W + "px"; pv.style.height = H + "px";
+  pv.style.transform = `scale(${scale})`;
+  pv.style.marginTop = pv.style.marginLeft = "0";
+  stage.style.position = "relative";
+  PV_READY = false;
+  pv.srcdoc = buildPreview(src, FMT);
+  // iframe size shown after scale; wrapper keeps layout box
+  pv.parentElement.style.height = Math.max(120, H * scale + 24) + "px";
+}
+window.addEventListener("message", (e) => {
+  if (e.source !== pv.contentWindow) return;
+  const d = e.data || {}; if (d.t !== "tick") return;
+  PV_READY = d.ok; PV_DUR = d.dur || 0; PV_TIME = d.time || 0;
+  const seek = $("#seek");
+  if (PV_DUR > 0) { seek.max = 1000; seek.value = Math.round((PV_TIME / PV_DUR) * 1000); }
+  $("#tc").textContent = `${PV_TIME.toFixed(2)} / ${PV_DUR.toFixed(2)} s`;
+  $("#btnPlay").textContent = d.playing ? "⏸ Pause" : "▶ Play";
+});
+$("#seek").addEventListener("input", (e) => {
+  if (!PV_READY) return;
+  const t = (e.target.value / 1000) * PV_DUR;
+  pv.contentWindow.postMessage({ t: "seek", v: t }, "*");
+});
+$("#btnPlay").onclick = () => {
+  if (!PV_READY) return;
+  const playing = $("#btnPlay").textContent.includes("Pause");
+  pv.contentWindow.postMessage({ t: playing ? "pause" : "play" }, "*");
+};
+document.querySelectorAll("#fmt button").forEach((b) => b.onclick = () => {
+  FMT = b.dataset.v;
+  document.querySelectorAll("#fmt button").forEach((x) => x.classList.toggle("on", x === b));
+  $("#fmt2").value = FMT;
+  refreshPreview();
+});
+$("#fmt2").onchange = (e) => { FMT = e.target.value; document.querySelectorAll("#fmt button").forEach((x) => x.classList.toggle("on", x.dataset.v === FMT)); refreshPreview(); };
+let rz = null;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (stage.clientWidth) refreshPreview(); }, 150); });
+$("#btnCheck").onclick = () => { showChecks(runChecks(code.value, FMT)); flash("Check complete"); };
+$("#btnReset").onclick = () => {
+  if (!confirm("Current code hata kar reset karein? (Draft bhi)")) return;
+  code.value = ""; localStorage.removeItem(DRAFT_KEY); paintGutter(); refreshPreview();
+};
+$("#tpl").onchange = (e) => {
+  const k = e.target.value; if (!k) return;
+  if (code.value.trim() && !confirm("Template se current code replace ho jayega. Aage badhein?")) { e.target.value = ""; return; }
+  code.value = TEMPLATES[k]; e.target.value = ""; paintGutter(); saveDraft(); refreshPreview();
+};
+
+/* ---------- PIN ---------- */
+$("#pinBtn").onclick = () => {
+  const v = prompt("APP_PIN daalo (ye browser me save hoga):", PIN);
+  if (v !== null) { PIN = v.trim(); localStorage.setItem("focus_pin", PIN); flash("PIN save ho gaya"); }
+};
+
+/* ---------- render: reuse the existing manual-mode pipeline ---------- */
+let poll = null;
+$("#btnRender").onclick = async () => {
+  const msg = $("#rmsg"), btn = $("#btnRender");
+  msg.className = "msg";
+  if (!PIN) { msg.className = "msg err"; msg.textContent = "Pehle PIN daalo (PIN button)."; return; }
+  const src = code.value.trim();
+  const script = $("#script").value.trim();
+  const preErr = runChecks(src, FMT).filter((c) => c.type === "bad");
+  if (preErr.length) { showChecks(runChecks(src, FMT)); msg.className = "msg err"; msg.textContent = "Pehle red errors fix karo: " + preErr[0].text; return; }
+  if (!script) { msg.className = "msg err"; msg.textContent = "Script ki ek line zaroori hai."; return; }
+  btn.disabled = true; msg.textContent = "Job bhej raha hu…";
+  try {
+    const body = {
+      kind: "faceless", mode: "manual", format: FMT === "long" ? "long" : "reel",
+      title: $("#title").value.trim() || "Editor video", script, html: src,
+      voice: { source: $("#voice").value, lang: $("#lang").value },
+      captions: { on: true }, endcard: { on: false }, music: { source: "none" },
+    };
+    const r = await api("/api/create", body);
+    saveJob({ id: r.id, title: body.title, t: Date.now() });
+    msg.textContent = "Render shuru ho gaya. Job: " + r.id;
+    trackJob(r.id);
+  } catch (e) {
+    msg.className = "msg err"; msg.textContent = e.message;
+  } finally { btn.disabled = false; }
+};
+function setProg(p) { $("#prog").style.width = Math.max(0, Math.min(100, p)) + "%"; }
+function trackJob(id) {
+  clearInterval(poll); setProg(3); $("#result").innerHTML = "";
+  poll = setInterval(async () => {
+    try {
+      const s = await api("/api/status?job=" + id);
+      setProg(s.pct || 0);
+      $("#rmsg").className = "msg";
+      if (s.state === "done") {
+        clearInterval(poll); setProg(100);
+        $("#rmsg").textContent = "Video ready ✓";
+        const f = await api(`/api/file?job=${id}&name=final.mp4&mode=url`);
+        $("#result").innerHTML = `<video controls playsinline src="${f.url}"></video>
+          <div class="row"><a class="btn go" href="${f.url}" download="video.mp4" style="text-decoration:none">⬇ Download MP4</a>
+          <button class="btn sec" id="btnBack" type="button">Dashboard me dekho</button></div>`;
+        $("#btnBack").onclick = () => (location.href = "/");
+      } else if (s.state === "failed") {
+        clearInterval(poll);
+        $("#rmsg").className = "msg err";
+        $("#rmsg").innerHTML = `Render fail: ${escapeHtml(s.label || "")} ${s.url ? `· <a class="lnk" href="${s.url}" target="_blank" rel="noopener" style="color:var(--acc2)">log dekho</a>` : ""}`;
+      } else {
+        $("#rmsg").textContent = (s.label || "Chal raha hai…") + " · " + (s.pct || 0) + "%";
+      }
+    } catch (e) { clearInterval(poll); $("#rmsg").className = "msg err"; $("#rmsg").textContent = e.message; }
+  }, 5000);
+}
+
+/* ---------- boot ---------- */
+const draft = localStorage.getItem(DRAFT_KEY);
+code.value = draft && draft.trim() ? draft : TEMPLATES.reel;
+paintGutter();
+refreshPreview();
+if (!PIN) flash("Tip: PIN button se APP_PIN daalo, phir render kar paoge.");
+</script>
+</body>
+</html>

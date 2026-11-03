@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>NeuroTriage Advance Engine</title>
+<style>
+:root{--bg:#06060c;--ink:#eef0ff;--mut:#8e92b5;--acc:#8b5cf6;--acc2:#22d3ee;--ok:#34d399;--bad:#fb7185;--warn:#fbbf24;--line:rgba(255,255,255,.09);--glass:rgba(255,255,255,.045);--r:20px;--shadow:0 24px 60px -24px rgba(0,0,0,.7)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:radial-gradient(1100px 620px at 8% -12%,rgba(139,92,246,.24),transparent 60%),radial-gradient(900px 560px at 108% 8%,rgba(34,211,238,.13),transparent 60%),var(--bg);background-attachment:fixed}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.app{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 104px)}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 4px 16px}
+header h1{font-size:22px;font-weight:750;letter-spacing:-.4px;margin:0;background:linear-gradient(90deg,#fff 20%,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+header small{color:var(--mut);font-size:12.5px;letter-spacing:.2px}
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);transition:border-color .25s}
+.glass:hover{border-color:rgba(255,255,255,.14)}
+h2{display:flex;align-items:center;font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--mut);margin:0 0 12px;font-weight:650}
+h2::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc2);margin-right:9px;box-shadow:0 0 10px var(--acc2)}
+.seg{display:flex;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:14px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 6px;border-radius:11px;font:inherit;font-weight:600;cursor:pointer;transition:color .2s,background .2s}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:linear-gradient(135deg,var(--acc),#3b82f6);color:#fff;box-shadow:0 6px 20px -6px rgba(139,92,246,.75)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;cursor:pointer;transition:border-color .2s,transform .15s}
+.chip:hover{border-color:rgba(255,255,255,.25);transform:translateY(-1px)}
+.chip.on{background:linear-gradient(135deg,var(--acc2),#67e8f9);color:#021418;border-color:transparent;font-weight:700}
+label{display:block;font-size:12.5px;color:var(--mut);margin:12px 0 6px;font-weight:550}
+input,select,textarea{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--ink);border-radius:13px;padding:11px 13px;font:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+input::placeholder,textarea::placeholder{color:#5d6188}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(139,92,246,.18)}
+textarea{min-height:110px;resize:vertical}
+textarea.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;min-height:180px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.btn{border:0;border-radius:14px;padding:13px 16px;font:inherit;font-weight:650;color:#fff;background:linear-gradient(135deg,var(--acc),#6366f1 55%,#3b82f6);width:100%;cursor:pointer;box-shadow:0 10px 28px -10px rgba(139,92,246,.75);transition:transform .15s,box-shadow .25s,filter .2s,opacity .2s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;filter:none}
+.btn.sec{background:rgba(255,255,255,.06);border:1px solid var(--line);box-shadow:none}
+.btn.sec:hover{background:rgba(255,255,255,.1)}
+.btn.go{background:linear-gradient(135deg,#10b981,#22d3ee);color:#03131a;box-shadow:0 10px 28px -10px rgba(34,211,238,.65)}
+.btn.sm{padding:9px 14px;width:auto;font-size:13px;border-radius:12px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}.btns .btn{flex:1;min-width:120px}
+.hint{font-size:12.5px;color:var(--mut);margin:8px 0 0}
+.hide{display:none!important}
+.file{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-top:8px;font-size:13px}
+.file span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file i{font-style:normal;color:var(--acc2);font-weight:600}
+.file button{border:0;background:none;color:var(--bad);font-size:18px;cursor:pointer}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-content:center;padding:0 16px calc(env(safe-area-inset-bottom) + 12px);pointer-events:none}
+nav .bar{pointer-events:auto;display:flex;width:100%;max-width:440px;background:rgba(14,14,26,.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--line);border-radius:24px;padding:6px;box-shadow:0 14px 44px -12px rgba(0,0,0,.85)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:9px 0;border-radius:18px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:color .2s,background .2s}
+nav button b{display:block;font-size:19px;line-height:1.3;margin-bottom:1px}
+nav button:hover{color:var(--ink)}
+nav button.on{color:#fff;background:linear-gradient(135deg,rgba(139,92,246,.5),rgba(34,211,238,.22))}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(4,4,10,.8);backdrop-filter:blur(10px);overflow:auto;padding:calc(env(safe-area-inset-top) + 14px) 16px 40px}
+.sheet .in{max-width:680px;margin:0 auto}
+.prog{height:12px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.prog>div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200% 100%;transition:width .6s ease;animation:shimmer 2.4s linear infinite;box-shadow:0 0 14px rgba(34,211,238,.45)}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+video{width:100%;border-radius:16px;background:#000;max-height:62vh;box-shadow:var(--shadow)}
+.job{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.job small{color:var(--mut)}
+.card{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:16px;padding:13px;margin-top:10px;position:relative;transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(255,255,255,.16);transform:translateY(-1px)}
+.card pre{white-space:pre-wrap;margin:6px 0 0;font:inherit;word-break:break-word}
+.card .btn{position:absolute;right:10px;top:10px}
+canvas{width:100%;border-radius:14px;background:#000}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.empty{text-align:center;color:var(--mut);padding:28px 10px;font-size:14px}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(34,211,238,.12);color:var(--acc2);border:1px solid rgba(34,211,238,.25)}
+.lnk{color:var(--acc2);text-decoration:none;font-weight:600;font-size:13px}
+.lnk:hover{text-decoration:underline}
+#tab-create>*{break-inside:avoid}
+@media (min-width:900px){
+  .app{max-width:1120px;padding-left:28px;padding-right:28px}
+  header h1{font-size:26px}
+  #tab-create{columns:2;column-gap:14px}
+  #tab-create>*{display:block;width:100%;margin-bottom:14px}
+  #tab-create>.glass{margin-bottom:14px}
+  #tab-jobs .glass{max-width:760px}
+  nav .bar{max-width:460px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><h1>🎬 NeuroTriage Advance Engine</h1><small>HyperFrames • auto video editor</small></div><a class="btn sec sm" href="/editor.html" style="width:auto;text-decoration:none">✏️ Editor</a><button class="btn sec sm hide" id="installBtn">Install</button></header>
+
+<!-- ============ CREATE ============ -->
+<section id="tab-create">
+ <div class="glass"><h2>1 · Kya banana hai</h2>
+  <div class="seg" id="kindSeg"><button data-v="edit" class="on">🎞️ Video Edit</button><button data-v="faceless">🗣️ Faceless</button></div>
+  <label>Format</label><div class="seg" id="fmtSeg"><button data-v="reel" class="on">📱 Reel 9:16</button><button data-v="long">🖥️ Long 16:9</button></div>
+  <label>Title (optional)</label><input id="title" placeholder="Video ka naam / topic">
+ </div>
+
+ <div class="glass" id="boxClips"><h2>2 · Raw videos / photos</h2>
+  <input type="file" id="clipFiles" accept="video/*,image/*" multiple>
+  <div class="row" style="margin-top:8px"><input id="clipLink" placeholder="ya direct https link paste karo"><button class="btn sec sm" id="clipAdd">Add</button></div>
+  <div id="clipList"></div>
+  <p class="hint" id="clipHint">Order wahi rahega jo list me hai. Folder khud ban jata hai.</p>
+ </div>
+
+ <div class="glass hide" id="boxScript"><h2>2 · Script</h2>
+  <textarea id="script" placeholder="Har line = ek scene.&#10;Hook: Kya aap ye jaante the?&#10;[clip:2] Ye line 2 number wali clip par chalegi&#10;Aakhri line = call to action"></textarea>
+  <label>Ya sirf topic do, AI script likhega (key chahiye)</label><input id="topic" placeholder="e.g. 5 facts about space">
+  <label><input type="checkbox" id="stock" style="width:auto"> Stock footage khud dhoondo (PEXELS_API_KEY optional)</label>
+  <p class="hint">Hindi voice ke liye script Devanagari me likho. Clips upar upload karoge to scenes par lag jayengi, warna animated text scenes banenge.</p>
+  <div class="row" style="margin-top:8px"><input type="file" id="clipFiles2" accept="video/*,image/*" multiple></div>
+ </div>
+
+ <div class="glass"><h2>3 · Editing ka tareeka</h2>
+  <div class="seg" id="modeSeg"><button data-v="preset" class="on">✨ Preset</button><button data-v="ai">🤖 AI</button><button data-v="manual">⌨️ Manual</button></div>
+  <p class="hint" id="modeHint"></p>
+  <div id="m-preset"><label>Style</label><div class="chips" id="presetChips"></div></div>
+  <div id="m-ai" class="hide"><label>Kaisi editing chahiye? (Hindi/English me likho)</label><textarea id="prompt" placeholder="Fast cuts, neon text, har scene par zoom, end me subscribe card…"></textarea></div>
+  <div id="m-manual" class="hide"><label>HyperFrames HTML code</label><textarea id="html" class="code" spellcheck="false" placeholder="<!doctype html> ... (khali chhodo to Preset engine chalega)"></textarea>
+   <p class="hint">Tokens: {{TOTAL}} {{W}} {{H}} {{S1_START}} {{S1_DUR}} {{ENDCARD_START}} • captions ke liye &lt;!--FOCUS_CAPTIONS--&gt; aur /*FOCUS_CAPTIONS_JS*/ • clips: assets/clip1.mp4 (faceless: assets/s1.mp4)</p></div>
+  <label>Color grade (HyperFrames built-in)</label>
+  <select id="grade"><option value="">Preset wala (auto)</option></select>
+  <label>Hook text (pehle 2 sec)</label><input id="hook" placeholder="Ye dekho! 😮">
+ </div>
+
+ <div class="glass"><h2>4 · Voice</h2>
+  <select id="vsrc"><option value="none">Koi voice nahi (original awaaz)</option><option value="generate">Script se voice banao (free)</option><option value="upload">Apni audio upload karo</option><option value="code">Audio code likho (voice + sfx)</option></select>
+  <div id="vgen" class="hide"><div class="row"><div><label>Bhasha</label><select id="vlang"><option value="hi">Hindi</option><option value="en">English</option></select></div><div><label>Awaaz</label><select id="vname"></select></div></div>
+   <label>Speed <span id="vspeedv">1.0</span></label><input type="range" id="vspeed" min="0.7" max="1.3" step="0.05" value="1"></div>
+  <div id="vup" class="hide"><label>Audio file</label><input type="file" id="vfile" accept="audio/*,video/*"><div id="vupInfo" class="hint"></div></div>
+  <div id="vcode" class="hide"><label>Audio code</label><textarea id="vcodeTxt" class="code" placeholder="voice: hf_alpha&#10;hi: नमस्ते दोस्तों!&#10;sfx: whoosh&#10;pause: 0.4&#10;en: Welcome back&#10;music: upbeat"></textarea>
+   <p class="hint">hi:/en: = bolna • pause: sec • sfx: whoosh|pop|click|ding|boom|riser • voice: / speed: • music: calm|upbeat|dark|epic</p></div>
+  <label><input type="checkbox" id="vclean" checked style="width:auto"> Voice cleanup (noise kam, volume barabar)</label>
+ </div>
+
+ <div class="glass"><h2>5 · Music, captions, ending</h2>
+  <div class="row"><div><label>Music</label><select id="msrc"><option value="none">Nahi</option><option value="calm">Calm (built-in)</option><option value="upbeat">Upbeat</option><option value="dark">Dark</option><option value="epic">Epic</option><option value="upload">Apna music upload</option></select></div>
+   <div><label>Captions</label><select id="cstyle"><option value="">Preset wala</option><option value="pop">Pop</option><option value="karaoke">Karaoke</option><option value="clean">Clean</option><option value="off">Band</option></select></div></div>
+  <div id="mup" class="hide"><input type="file" id="mfile" accept="audio/*"><div id="mupInfo" class="hint"></div></div>
+  <label><input type="checkbox" id="ecOn" checked style="width:auto"> End card</label>
+  <div class="row"><input id="ecText" placeholder="Like • Share • Follow"><input id="ecSub" placeholder="@channel / Try NeuroTriage"></div>
+ </div>
+
+ <div class="glass"><h2>6 · Reference video (optional)</h2>
+  <input type="file" id="rfile" accept="video/*"><input id="rlink" placeholder="ya YouTube / direct link" style="margin-top:8px">
+  <p class="hint">Gemini iska style (pace, cuts, ending) samajh kar usi jaisa banayega. Content copy nahi hota. (GEMINI_API_KEY chahiye)</p><div id="rInfo" class="hint"></div>
+ </div>
+ <button class="btn go" id="createBtn">🚀 Video banao</button>
+ <p class="hint" id="createMsg"></p>
+</section>
+
+<!-- ============ JOBS ============ -->
+<section id="tab-jobs" class="hide"><div class="glass"><h2>Mere videos</h2><div id="jobList"></div><p class="hint">Videos GitHub par kuch din hi rehti hain. Zaroori ho to download kar lo.</p></div></section>
+
+<!-- ============ SETTINGS ============ -->
+<section id="tab-set" class="hide">
+ <div class="glass"><h2>PIN</h2><input id="pin" type="password" placeholder="APP_PIN (Vercel me jo daala)"><button class="btn sm" id="pinSave" style="margin-top:8px">Save + Test</button><div id="pingOut" class="hint"></div></div>
+ <div class="glass"><h2>App install</h2><p class="hint">Android/Chrome: upar Install button. iPhone: Safari → Share → Add to Home Screen. Laptop: address bar me install icon.</p></div>
+</section>
+</div>
+
+<nav><div class="bar"><button data-t="create" class="on"><b>✨</b>Create</button><button data-t="jobs"><b>🎞️</b>Videos</button><button data-t="set"><b>⚙️</b>Settings</button></div></nav>
+<div class="sheet hide" id="sheet"><div class="in" id="sheetIn"></div></div>
+
+<script type="module">
+import { upload } from "https://esm.sh/@vercel/blob@0.27.3/client";
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const PRESETS = {cinematic:"Cinematic",vlog:"Vlog",news:"News",viral:"Viral Reel",minimal:"Minimal",neon:"Neon Night",documentary:"Documentary",retro:"Retro VHS"};
+const GRADES = ["neutral","warm-daylight","clean-studio","skin-soft","food-pop","night-lift","muted-editorial","vintage-wash","mono-clean","mono-fade","soft-boost","bright-pop","deep-contrast","creator-camcorder","vhs-playback"];
+const VOICES = {hi:[["hf_alpha","Hindi • Female 1"],["hf_beta","Hindi • Female 2"],["hm_omega","Hindi • Male 1"],["hm_psi","Hindi • Male 2"]],en:[["af_heart","English • Female"],["am_adam","English • Male"],["bf_emma","British • Female"],["bm_george","British • Male"]]};
+const MODEHINT = {preset:"Bina key ke: pro color-grade + captions + transitions + end card apne aap.",ai:"Aap prompt likho, Gemini/Groq HyperFrames code banata hai (keys chahiye).",manual:"Apna code/script/audio code do. Bina kisi API key ke."};
+const S = {kind:"edit",format:"reel",mode:"preset",preset:"viral",clips:[],voiceUrl:"",musicUrl:"",refUrl:""};
+let PIN = localStorage.getItem("focus_pin") || "";
+const jobs = () => JSON.parse(localStorage.getItem("focus_jobs") || "[]");
+const saveJob = (j) => { const l = jobs().filter((x) => x.id !== j.id); l.unshift(j); localStorage.setItem("focus_jobs", JSON.stringify(l.slice(0, 30))); };
+
+async function api(path, body, raw) {
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers: { "x-pin": PIN, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  if (raw) { if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status); return r; }
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || "Error " + r.status); return j;
+}
+async function up(file, info) {
+  const r = await upload(`focus/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`, file, { access: "public", handleUploadUrl: "/api/upload", clientPayload: PIN, multipart: file.size > 40e6,
+    onUploadProgress: ({ percentage }) => { if (info) info.textContent = `Upload ${Math.round(percentage)}%`; } });
+  return r.url;
+}
+// ---------- segmented controls
+function seg(id, key, cb) { $$(`#${id} button`).forEach((b) => b.onclick = () => { $$(`#${id} button`).forEach((x) => x.classList.toggle("on", x === b)); S[key] = b.dataset.v; cb && cb(); }); }
+seg("kindSeg", "kind", sync); seg("fmtSeg", "format"); seg("modeSeg", "mode", sync);
+function sync() {
+  const f = S.kind === "faceless";
+  $("#boxClips").classList.toggle("hide", f); $("#boxScript").classList.toggle("hide", !f);
+  ["preset", "ai", "manual"].forEach((m) => $("#m-" + m).classList.toggle("hide", S.mode !== m)); $("#modeHint").textContent = MODEHINT[S.mode];
+  if (f && $("#vsrc").value === "none") { $("#vsrc").value = "generate"; vsync(); }
+}
+$("#presetChips").innerHTML = Object.entries(PRESETS).map(([k, v]) => `<button class="chip${k === S.preset ? " on" : ""}" data-k="${k}">${v}</button>`).join("");
+$$("#presetChips .chip").forEach((c) => c.onclick = () => { S.preset = c.dataset.k; $$("#presetChips .chip").forEach((x) => x.classList.toggle("on", x === c)); });
+GRADES.forEach((g) => $("#grade").insertAdjacentHTML("beforeend", `<option>${g}</option>`));
+function vsync() { const v = $("#vsrc").value; $("#vgen").classList.toggle("hide", v !== "generate" && v !== "code" ? true : v === "code"); $("#vup").classList.toggle("hide", v !== "upload"); $("#vcode").classList.toggle("hide", v !== "code");
+  $("#vgen").classList.toggle("hide", v !== "generate"); const l = $("#vlang").value; $("#vname").innerHTML = VOICES[l].map(([k, n]) => `<option value="${k}">${n}</option>`).join(""); }
+$("#vsrc").onchange = vsync; $("#vlang").onchange = vsync; $("#vspeed").oninput = (e) => $("#vspeedv").textContent = (+e.target.value).toFixed(2);
+$("#msrc").onchange = () => $("#mup").classList.toggle("hide", $("#msrc").value !== "upload");
+// ---------- clips
+function drawClips() { $("#clipList").innerHTML = S.clips.map((c, i) => `<div class="file"><i>${i + 1}</i><span>${c.name}</span><button data-i="${i}">✕</button></div>`).join("");
+  $$("#clipList button").forEach((b) => b.onclick = () => { S.clips.splice(+b.dataset.i, 1); drawClips(); }); }
+async function addFiles(files, hintEl) { for (const f of files) { const row = { name: f.name, url: "" }; S.clips.push(row); drawClips(); const sp = $("#clipList").lastElementChild.querySelector("span");
+  try { row.url = await up(f, { set textContent(t) { sp.textContent = f.name + " — " + t; } }); sp.textContent = f.name; } catch (e) { S.clips.splice(S.clips.indexOf(row), 1); drawClips(); alert("Upload fail: " + e.message); } } drawClips(); }
+$("#clipFiles").onchange = (e) => addFiles([...e.target.files]); $("#clipFiles2").onchange = (e) => addFiles([...e.target.files]);
+$("#clipAdd").onclick = () => { const u = $("#clipLink").value.trim(); if (u.startsWith("https://")) { S.clips.push({ name: u.split("/").pop().slice(0, 40) || "link", url: u }); $("#clipLink").value = ""; drawClips(); } else alert("https:// link do"); };
+$("#vfile").onchange = async (e) => { try { S.voiceUrl = await up(e.target.files[0], $("#vupInfo")); $("#vupInfo").textContent = "✓ audio ready"; } catch (x) { $("#vupInfo").textContent = x.message; } };
+$("#mfile").onchange = async (e) => { try { S.musicUrl = await up(e.target.files[0], $("#mupInfo")); $("#mupInfo").textContent = "✓ music ready"; } catch (x) { $("#mupInfo").textContent = x.message; } };
+$("#rfile").onchange = async (e) => { try { S.refUrl = await up(e.target.files[0], $("#rInfo")); $("#rInfo").textContent = "✓ reference ready"; } catch (x) { $("#rInfo").textContent = x.message; } };
+// ---------- create
+function body() {
+  const v = $("#vsrc").value, m = $("#msrc").value, cs = $("#cstyle").value, g = $("#grade").value;
+  return { kind: S.kind, format: S.format, mode: S.mode, preset: S.preset, title: $("#title").value, hook: $("#hook").value, grade: g ? { preset: g, intensity: 1 } : null,
+    clips: S.clips.filter((c) => c.url).map((c) => ({ url: c.url, name: c.name })), script: $("#script").value, topic: $("#topic").value, stock: $("#stock").checked,
+    prompt: $("#prompt").value, html: S.mode === "manual" ? $("#html").value : "",
+    voice: { source: v, lang: $("#vlang").value, voice: $("#vname").value, speed: +$("#vspeed").value, cleanup: $("#vclean").checked, code: $("#vcodeTxt").value, url: S.voiceUrl },
+    music: m === "none" ? { source: "none" } : m === "upload" ? { source: "upload", url: S.musicUrl } : { source: "synth", style: m },
+    captions: { on: cs !== "off", style: cs === "off" ? "" : cs }, endcard: { on: $("#ecOn").checked, text: $("#ecText").value, sub: $("#ecSub").value },
+    reference: (S.refUrl || $("#rlink").value.trim()) ? { url: S.refUrl || $("#rlink").value.trim() } : null };
+}
+$("#createBtn").onclick = async () => {
+  if (!PIN) { show("set"); return alert("Pehle Settings me PIN daalo."); }
+  $("#createBtn").disabled = true; $("#createMsg").textContent = "Bhej raha hu… (AI mode me 20-40 sec lag sakte hain)";
+  try { const b = body(), r = await api("/api/create", b); saveJob({ id: r.id, title: b.title || "Untitled", t: Date.now(), format: b.format });
+    $("#createMsg").textContent = (r.notes || []).join(" • "); openJob(r.id); } catch (e) { $("#createMsg").textContent = "❌ " + e.message; } $("#createBtn").disabled = false;
+};
+// ---------- job sheet
+let timer, shown = 0;
+function sheet(html) { $("#sheetIn").innerHTML = html; $("#sheet").classList.remove("hide"); }
+function closeSheet() { clearInterval(timer); $("#sheet").classList.add("hide"); }
+function openJob(id) {
+  clearInterval(timer); shown = 0;
+  sheet(`<div class="glass"><div class="job"><h2 style="margin:0">Video ban rahi hai</h2><button class="btn sec sm" id="x">Band</button></div><div class="prog" style="margin:14px 0 8px"><div id="bar"></div></div><div id="lbl" class="hint">Queue me…</div>
+   <p class="hint">App band kar sakte ho, job GitHub par chalti rahegi. Baad me “Videos” tab se khol lena. Progress andaaza hai.</p></div>`);
+  $("#x").onclick = closeSheet; let t0 = Date.now();
+  const tick = async () => { try { const s = await api("/api/status?job=" + id);
+    if (s.state === "done") { clearInterval(timer); return done(id, s); }
+    if (s.state === "failed") { clearInterval(timer); $("#lbl").innerHTML = `<span class="bad">❌ ${s.label}</span> — <a style="color:#9cf" target="_blank" href="${s.url}">logs dekho</a>`; return; }
+    const creep = Math.min((Date.now() - t0) / 1000 / 600, 1) * Math.max((s.nextPct || s.pct) - s.pct - 1, 0); shown = Math.max(shown, s.pct + creep);
+    $("#bar").style.width = Math.min(shown, 97) + "%"; $("#lbl").textContent = `${Math.round(Math.min(shown, 97))}% • ${s.label}`; } catch (e) { $("#lbl").textContent = e.message; } };
+  tick(); timer = setInterval(tick, 4000);
+}
+async function done(id, s) {
+  const has = (n) => s.assets.includes(n);
+  sheet(`<div class="glass"><div class="job"><h2 style="margin:0" class="ok">✅ Video ready</h2><button class="btn sec sm" id="x">Band</button></div>
+   <video id="pv" controls playsinline style="margin-top:10px"></video>
+   <div class="btns" style="margin-top:12px"><button class="btn go" id="dl">⬇️ Download</button><button class="btn" id="re">✏️ Re-edit</button></div>
+   <div class="btns" style="margin-top:8px"><button class="btn sec" id="th">🖼️ Thumbnail</button><button class="btn sec" id="mt">📈 Title • Tags • Caption</button></div></div><div id="panel"></div>`);
+  $("#x").onclick = closeSheet;
+  api(`/api/file?job=${id}&name=final.mp4&mode=url`).then((r) => $("#pv").src = r.url).catch(() => {});
+  $("#dl").onclick = async () => { try { const r = await api(`/api/file?job=${id}&name=final.mp4&mode=url`); const a = document.createElement("a"); a.href = r.url; a.download = "video.mp4"; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { alert(e.message); } };
+  $("#re").onclick = () => reedit(id); $("#th").onclick = () => thumbs(id, s.assets); $("#mt").onclick = () => meta(id);
+}
+// ---------- re-edit
+async function reedit(id) {
+  $("#panel").innerHTML = `<div class="glass"><h2>Re-edit</h2><div class="seg" id="rSeg"><button data-v="p" class="on">💬 Prompt (AI)</button><button data-v="c">⌨️ Code</button><button data-v="q">⚡ Quick</button></div>
+   <div id="rp"><label>Kya badalna hai?</label><textarea id="rPrompt" placeholder="Hook bada karo, captions yellow, end me zoom-out, 2nd scene ko slow…"></textarea></div>
+   <div id="rc" class="hide"><label>HyperFrames code (current)</label><textarea id="rCode" class="code" spellcheck="false">loading…</textarea></div>
+   <div id="rq" class="hide"><label>Style</label><select id="rPreset">${Object.entries(PRESETS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><label>Color grade</label><select id="rGrade"><option value="">same</option>${GRADES.map((g) => `<option>${g}</option>`).join("")}</select><label>Hook</label><input id="rHook"></div>
+   <button class="btn go" id="rGo" style="margin-top:12px">🔁 Dobara render</button><p class="hint" id="rMsg"></p></div>`;
+  let mode = "p";
+  $$("#rSeg button").forEach((b) => b.onclick = () => { mode = b.dataset.v; $$("#rSeg button").forEach((x) => x.classList.toggle("on", x === b)); ["p", "c", "q"].forEach((k) => $("#r" + k).classList.toggle("hide", k !== mode)); });
+  api(`/api/file?job=${id}&name=composition.html`, null, true).then((r) => r.text()).then((t) => $("#rCode").value = t).catch(() => $("#rCode").value = "");
+  $("#rGo").onclick = async () => { $("#rMsg").textContent = "Bhej raha hu…"; const b = { job: id };
+    if (mode === "p") b.prompt = $("#rPrompt").value; else if (mode === "c") b.html = $("#rCode").value;
+    else b.patch = { preset: $("#rPreset").value, hook: $("#rHook").value || undefined, grade: $("#rGrade").value ? { preset: $("#rGrade").value, intensity: 1 } : null };
+    try { const r = await api("/api/reedit", b); saveJob({ id: r.id, title: "Re-edit", t: Date.now() }); openJob(r.id); } catch (e) { $("#rMsg").textContent = "❌ " + e.message; } };
+}
+// ---------- thumbnail editor
+async function thumbs(id, assets) {
+  const names = ["thumb1.jpg", "thumb2.jpg", "thumb3.jpg"].filter((n) => assets.includes(n));
+  $("#panel").innerHTML = `<div class="glass"><h2>Thumbnail</h2><div class="chips" id="tf">${names.map((n, i) => `<button class="chip${i ? "" : " on"}" data-n="${n}">Frame ${i + 1}</button>`).join("")}</div>
+   <canvas id="cv" style="margin-top:10px"></canvas><label>Text</label><input id="tt" placeholder="BIG TEXT">
+   <div class="row"><div><label>Size</label><input type="range" id="ts" min="40" max="220" value="120"></div><div><label>Upar-neeche</label><input type="range" id="ty" min="5" max="95" value="78"></div></div>
+   <div class="row"><div><label>Text color</label><input type="color" id="tc" value="#ffe600"></div><div><label>Outline</label><input type="color" id="to" value="#000000"></div></div>
+   <button class="btn go" id="tdl" style="margin-top:10px">⬇️ PNG download</button></div>`;
+  let img = new Image(); const cv = $("#cv"), cx = cv.getContext("2d");
+  const draw = () => { if (!img.width) return; cv.width = img.width; cv.height = img.height; cx.drawImage(img, 0, 0); const t = $("#tt").value; if (!t) return;
+    const sz = +$("#ts").value * (img.width / 1280); cx.font = `900 ${sz}px Impact, Arial Black, sans-serif`; cx.textAlign = "center"; cx.lineJoin = "round"; cx.lineWidth = sz / 7; cx.strokeStyle = $("#to").value; cx.fillStyle = $("#tc").value;
+    const words = t.toUpperCase().split(" "), lines = []; let cur = ""; words.forEach((w) => { const x = cur ? cur + " " + w : w; if (cx.measureText(x).width > img.width * .9 && cur) { lines.push(cur); cur = w; } else cur = x; }); lines.push(cur);
+    const y0 = img.height * (+$("#ty").value / 100) - ((lines.length - 1) * sz * 1.05) / 2; lines.forEach((l, i) => { const y = y0 + i * sz * 1.05; cx.strokeText(l, img.width / 2, y); cx.fillText(l, img.width / 2, y); }); };
+  const load = async (n) => { const r = await api(`/api/file?job=${id}&name=${n}`, null, true); img = new Image(); img.onload = draw; img.src = URL.createObjectURL(await r.blob()); };
+  $$("#tf .chip").forEach((c) => c.onclick = () => { $$("#tf .chip").forEach((x) => x.classList.toggle("on", x === c)); load(c.dataset.n); });
+  ["tt", "ts", "ty", "tc", "to"].forEach((k) => $("#" + k).oninput = draw); $("#tdl").onclick = () => { const a = document.createElement("a"); a.href = cv.toDataURL("image/png"); a.download = "thumbnail.png"; a.click(); };
+  if (names[0]) load(names[0]);
+}
+// ---------- metadata
+async function meta(id) {
+  $("#panel").innerHTML = `<div class="glass"><h2>YouTube • Instagram</h2><p class="hint" id="mm">Video analyse ho rahi hai…</p><div id="mo"></div></div>`;
+  try { const m = await api("/api/meta", { job: id }); const card = (h, t) => `<div class="card"><b>${h}</b><button class="btn sec sm" data-c="${encodeURIComponent(t)}">Copy</button><pre>${t.replace(/</g, "&lt;")}</pre></div>`;
+    $("#mm").textContent = m.ai ? "AI se bana" : "Template se bana (AI key nahi mili)";
+    $("#mo").innerHTML = card("YouTube title", m.youtube.title) + card("YouTube description", m.youtube.description) + card("YouTube tags", (m.youtube.tags || []).join(", ")) + card("Shorts title", m.shorts_title || "")
+      + card("Instagram caption", m.instagram.caption) + card("Instagram hashtags", (m.instagram.hashtags || []).map((h) => "#" + h.replace(/^#/, "")).join(" "));
+    $$("#mo button").forEach((b) => b.onclick = () => { navigator.clipboard.writeText(decodeURIComponent(b.dataset.c)); b.textContent = "✓"; setTimeout(() => b.textContent = "Copy", 1200); }); } catch (e) { $("#mm").textContent = "❌ " + e.message; }
+}
+// ---------- jobs + settings + nav
+function drawJobs() { const l = jobs(); $("#jobList").innerHTML = l.length ? l.map((j) => `<div class="card job"><div><b>${j.title}</b><br><small>${new Date(j.t).toLocaleString()} • ${j.id}</small></div><button class="btn sm" data-id="${j.id}">Open</button></div>`).join("") : '<p class="hint">Abhi koi video nahi.</p>';
+  $$("#jobList button").forEach((b) => b.onclick = () => openJob(b.dataset.id)); }
+function show(t) { $$("section").forEach((s) => s.classList.toggle("hide", s.id !== "tab-" + t)); $$("nav button").forEach((b) => b.classList.toggle("on", b.dataset.t === t)); if (t === "jobs") drawJobs(); window.scrollTo(0, 0); }
+$$("nav button").forEach((b) => b.onclick = () => show(b.dataset.t));
+$("#pin").value = PIN;
+$("#pinSave").onclick = async () => { PIN = $("#pin").value; localStorage.setItem("focus_pin", PIN); try { const p = await api("/api/ping");
+  $("#pingOut").innerHTML = `<span class="ok">✓ Connected</span> • Gemini keys: ${p.gemini} • Groq keys: ${p.groq} • GitHub: ${p.github ? "ok" : "<span class=bad>missing</span>"} • Upload storage: ${p.blob ? "ok" : "<span class=bad>Blob store connect karo</span>"} • Stock: ${p.pexels ? "on" : "off"}`; } catch (e) { $("#pingOut").innerHTML = `<span class="bad">${e.message}</span>`; } };
+let dp; addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); dp = e; $("#installBtn").classList.remove("hide"); });
+$("#installBtn").onclick = async () => { if (dp) { dp.prompt(); dp = null; $("#installBtn").classList.add("hide"); } };
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+vsync(); sync(); if (!PIN) show("set");
+</script>
+</body>
+</html>

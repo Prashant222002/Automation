@@ -1,0 +1,196 @@
+name: NeuroTriage Long Render
+run-name: render ${{ inputs.job }}
+
+# Started by the NeuroTriage app when format = long. Splits the video into chunks
+# rendered in parallel with HyperFrames' distributed primitives, then stitches them.
+on:
+  workflow_dispatch:
+    inputs:
+      job:  { description: "job id", required: true }
+      spec: { description: "job spec URL", required: true }
+
+permissions:
+  contents: write   # publish the finished video as a release asset
+  actions: read     # chunk jobs download artifacts from the plan job
+
+concurrency:
+  group: neurotriage-long-${{ inputs.job }}
+  cancel-in-progress: false
+
+env:
+  HF_VERSION: "0.8.224"        # HyperFrames CLI + @hyperframes/producer (same version)
+  KEEP_DAYS: "7"
+  FOCUS_WORK: ${{ github.workspace }}/work
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: focus
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install tools (ffmpeg, fonts, voice, HyperFrames producer)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-noto-color-emoji espeak-ng
+          pip install edge-tts
+          npx -y hyperframes@${HF_VERSION} browser ensure || true
+          npm install --no-save @hyperframes/producer@${HF_VERSION}
+      - name: 1 Download files
+        env: { SPEC_URL: "${{ inputs.spec }}" }
+        run: python focus/pipeline.py fetch
+      - name: 2 Voice and audio
+        run: python focus/pipeline.py voice
+      - name: 3 Captions
+        run: python focus/pipeline.py captions
+      - name: 4 Build edit
+        run: python focus/pipeline.py compose
+      - name: 5 Plan chunks (HyperFrames planV2)
+        id: plan
+        run: |
+          MATRIX=$(node focus/long_render.mjs plan | tail -1)
+          echo "chunks=$MATRIX" >> "$GITHUB_OUTPUT"
+      - name: 6 Pack hand-off (small files only; voice as Opus)
+        run: |
+          H=work/handoff; rm -rf $H; mkdir -p $H/proj/assets
+          cp work/state.json work/spec.json $H/
+          cp work/proj/index.html $H/proj/
+          cp -r work/proj/assets/. $H/proj/assets/ 2>/dev/null || true
+          ffmpeg -loglevel error -i work/proj/assets/voice.wav -c:a libopus -b:a 64k $H/voice.opus
+          rm -f $H/proj/assets/voice.wav
+          mkdir -p $H/tmp; [ -f work/tmp/music_in ] && cp work/tmp/music_in $H/tmp/ || true
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: "planv2-${{ inputs.job }}"
+          path: "work/planv2"
+          retention-days: 2
+      - name: Upload hand-off
+        uses: actions/upload-artifact@v4
+        with:
+          name: "handoff-${{ inputs.job }}"
+          path: "work/handoff"
+          retention-days: 2
+
+  chunk:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20           # free plan runs 20 jobs at once
+      matrix:
+        chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: focus
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Install ffmpeg and HyperFrames producer
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-noto-color-emoji
+          npm install --no-save @hyperframes/producer@${HF_VERSION}
+          npx -y hyperframes@${HF_VERSION} browser ensure || true
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: "planv2-${{ inputs.job }}"
+          path: "work/planv2"
+      - name: Render chunk ${{ matrix.chunk }}
+        run: node focus/long_render.mjs chunk ${{ matrix.chunk }}
+      - name: Upload chunk
+        uses: actions/upload-artifact@v4
+        with:
+          name: "chunk-${{ matrix.chunk }}-${{ inputs.job }}"
+          path: "work/chunks/chunk-${{ matrix.chunk }}.mp4"
+          retention-days: 2
+
+  assemble:
+    needs: [plan, chunk]
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: focus
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-noto-color-emoji espeak-ng
+          pip install edge-tts
+          npm install --no-save @hyperframes/producer@${HF_VERSION}
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: "planv2-${{ inputs.job }}"
+          path: "work/planv2"
+      - name: Download hand-off
+        uses: actions/download-artifact@v4
+        with:
+          name: "handoff-${{ inputs.job }}"
+          path: "work/handoff"
+      - name: Download all chunks
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "chunk-*-${{ inputs.job }}"
+          path: "work/chunks"
+          merge-multiple: true
+      - name: Restore work folder
+        run: |
+          mkdir -p work/proj/assets work/out
+          cp work/handoff/state.json work/handoff/spec.json work/
+          cp -r work/handoff/proj/. work/proj/
+          mkdir -p work/tmp; [ -f work/handoff/tmp/music_in ] && cp work/handoff/tmp/music_in work/tmp/ || true
+          ffmpeg -loglevel error -i work/handoff/voice.opus -ar 48000 -ac 1 work/proj/assets/voice.wav
+      - name: Stitch chunks into one video (HyperFrames assembleV2)
+        run: node focus/long_render.mjs assemble
+      - name: Mix sound and thumbnails
+        run: python focus/pipeline.py finish
+      - name: Split for GitHub's 2 GB asset limit (only if needed)
+        run: |
+          if [ "$(stat -c%s work/out/final.mp4)" -gt 1900000000 ]; then
+            cd work/out && ffmpeg -loglevel error -i final.mp4 -c copy -f segment -segment_time 1200 -reset_timestamps 1 part-%02d.mp4 && rm final.mp4
+          fi
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB: ${{ inputs.job }}
+        run: |
+          gh release create "job-$JOB" work/out/* --repo "$GITHUB_REPOSITORY" --title "job $JOB" --notes "NeuroTriage Advance Engine output (long)" --latest=false
+      - name: Report error (if any)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB: ${{ inputs.job }}
+        run: |
+          mkdir -p work/out && [ -f work/out/report.json ] || echo '{"ok":false}' > work/out/report.json
+          gh release create "job-$JOB-failed" work/out/report.json --repo "$GITHUB_REPOSITORY" --title "failed $JOB" --notes "see Actions log" || true
+      - name: Cleanup old videos
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cutoff=$(date -u -d "-${KEEP_DAYS} days" +%Y-%m-%dT%H:%M:%SZ)
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt \
+            --jq ".[] | select(.tagName|startswith(\"job-\")) | select(.createdAt < \"$cutoff\") | .tagName" \
+            | while read t; do gh release delete "$t" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true; done

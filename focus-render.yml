@@ -1,0 +1,78 @@
+name: Focus Render
+run-name: render ${{ inputs.job }}
+
+# Started by the NeuroTriage Advance Engine app (Vercel). One run = one video. Each step below is one progress-bar tick in the app.
+on:
+  workflow_dispatch:
+    inputs:
+      job:  { description: "job id", required: true }
+      spec: { description: "job spec URL", required: true }
+
+permissions:
+  contents: write   # needed to publish the finished video as a (private-repo) release asset
+
+concurrency:
+  group: focus-render-${{ inputs.job }}
+  cancel-in-progress: false
+
+env:
+  HF_VERSION: "0.8.224"        # HyperFrames CLI version (same as this repo's packages/cli)
+  KEEP_DAYS: "7"               # finished videos are deleted after this many days
+  FOCUS_WORK: ${{ github.workspace }}/work
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: focus
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install tools (ffmpeg, fonts, voice)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-noto-color-emoji espeak-ng
+          pip install edge-tts
+          npx -y hyperframes@${HF_VERSION} browser ensure || true
+      - name: 1 Download files
+        env: { SPEC_URL: "${{ inputs.spec }}" }
+        run: python focus/pipeline.py fetch
+      - name: 2 Voice and audio
+        run: python focus/pipeline.py voice
+      - name: 3 Captions
+        run: python focus/pipeline.py captions
+      - name: 4 Build edit
+        run: python focus/pipeline.py compose
+      - name: 5 Render video (longest step)
+        run: python focus/pipeline.py render
+      - name: 6 Mix sound and thumbnails
+        run: python focus/pipeline.py finish
+      - name: 7 Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB: ${{ inputs.job }}
+        run: |
+          gh release create "job-$JOB" work/out/* --repo "$GITHUB_REPOSITORY" --title "job $JOB" --notes "NeuroTriage Advance Engine output" --latest=false
+      - name: Report error (if any)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB: ${{ inputs.job }}
+        run: |
+          mkdir -p work/out && [ -f work/out/report.json ] || echo '{"ok":false}' > work/out/report.json
+          gh release create "job-$JOB-failed" work/out/report.json --repo "$GITHUB_REPOSITORY" --title "failed $JOB" --notes "see Actions log" || true
+      - name: Cleanup old videos
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cutoff=$(date -u -d "-${KEEP_DAYS} days" +%Y-%m-%dT%H:%M:%SZ)
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt \
+            --jq ".[] | select(.tagName|startswith(\"job-\")) | select(.createdAt < \"$cutoff\") | .tagName" \
+            | while read t; do gh release delete "$t" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true; done
