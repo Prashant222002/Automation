@@ -59,6 +59,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           JOB: ${{ inputs.job }}
         run: |
+          find work/out -type f -empty -delete
           gh release create "job-$JOB" work/out/* --repo "$GITHUB_REPOSITORY" --title "job $JOB" --notes "NeuroTriage Advance Engine output" --latest=false
       - name: Report error (if any)
         if: failure()
